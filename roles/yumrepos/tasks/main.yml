@@ -1,0 +1,8 @@
+- name: enable selected repos
+  action: copy 
+    src="{{ item }}.repo" 
+    dest="/etc/yum.repos.d" 
+    owner=root 
+    group=root 
+    mode=644
+  with_items: repos

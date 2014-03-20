@@ -1,0 +1,11 @@
+---
+- name: restart icinga
+  action: service name=icinga state=restarted enabled=yes
+  when: icinga_service.changed == False
+
+- name: restart ido2db
+  action: service name=ido2db state=restarted enabled=yes
+  when: ido2db_service.changed == False
+
+- name: clean cache
+  action: shell /usr/bin/icinga-web-clearcache

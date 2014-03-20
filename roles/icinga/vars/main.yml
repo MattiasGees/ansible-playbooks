@@ -1,0 +1,8 @@
+---
+mysql_root_user: root
+mysql_root_pwd: test
+mysql_icinga_user: icinga2
+mysql_icinga_pwd: test123
+mysql_icinga_web_user: icinga_web2
+mysql_icinga_web_pwd: test123
+icinga_version: 1.11.0

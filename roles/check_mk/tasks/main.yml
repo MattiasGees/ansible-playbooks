@@ -1,0 +1,9 @@
+---
+- name: install check_mk
+  action: yum name=check_mk state=latest
+
+- name: copy main.mk template
+  action: template src=main.mk.j2 dest=/etc/check_mk/main.mk mode=0644
+  notify:
+  - check_mk reinventory
+  - check_mk generate

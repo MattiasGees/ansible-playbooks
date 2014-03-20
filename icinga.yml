@@ -1,0 +1,12 @@
+---
+- hosts: icinga
+  remote_user: root
+  vars:
+   repos:
+   - icinga
+  roles:
+   - yumrepos
+   - icinga
+   - pnp4nagios
+   - check_mk
+   - check_mk-agent

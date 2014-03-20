@@ -1,0 +1,5 @@
+[icinga]
+name=icinga
+baseurl=http://yum.mattiasgees.be/6/x86_64
+enabled=1
+gpgcheck=0

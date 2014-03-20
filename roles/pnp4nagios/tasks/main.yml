@@ -1,0 +1,26 @@
+---
+- name: install packages
+  action: yum name={{ item }} state=latest
+  with_items:
+  - icinga-web-module-pnp
+  - pnp4nagios
+
+- name: copy pnp4nagios.cfg
+  action: copy src=pnp4nagios.cfg dest=/etc/icinga/modules/pnp4nagios.cfg mode=0664
+  notify:
+  - restart icinga
+
+- name: copy template npcd.cfg
+  action: template src=npcd.cfg.j2 dest=/etc/pnp4nagios/npcd.cfg mode=0644
+  notify:
+  - restart npcd
+
+- name: remove install.php from pnp4nagios directory
+  action: file state=absent path=/usr/share/pnp4nagios/install.php 
+ 
+- name: change owner/group on /uss/share/pnp4nagios/perfdata
+  action: file state=directory path=/usr/share/pnp4nagios/perfdata owner=icinga group=icinga
+
+- name: start npcd
+  action: service name=npcd state=started enabled=yes
+  register: npcd_service

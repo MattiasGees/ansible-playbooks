@@ -1,0 +1,6 @@
+---
+- name: check_mk reinventory
+  action: shell cmk -II
+
+- name: check_mk generate
+  action: shell cmk -O

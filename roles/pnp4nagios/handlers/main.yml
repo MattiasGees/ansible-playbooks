@@ -1,0 +1,7 @@
+---
+- name: restart icinga
+  action: service name=icinga state=restarted enabled=yes
+
+- name: restart npcd
+  action: service name=ido2db state=restarted enabled=yes
+  when: npcd_service.changed == False

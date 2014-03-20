@@ -1,0 +1,103 @@
+---
+- name: install packages
+  action: yum name={{ item }} state=latest
+  with_items:
+  - icinga
+  - icinga-doc
+  - icinga-gui
+  - icinga-gui-config
+  - icinga-idoutils-libdbi-mysql
+  - mysql-server
+  - mysql
+  - icinga-web
+  - icinga-web-mysql
+  - MySQL-python
+  - nagios-plugins
+  - nagios-plugins-setuid
+
+- name: start MySQL server
+  action: service name=mysqld state=started enabled=yes
+
+- name: set the MySQL root account credentials
+  action: mysql_user name=root host={{ item }} password={{ mysql_root_pwd }} priv=*.*:ALL,GRANT
+  with_items:
+    - "{{ ansible_hostname }}"
+    - ::1
+    - 127.0.0.1
+    - localhost
+  when: ansible_hostname != 'localhost'
+
+- name: set my.cnf for root
+  action: template src="my.cnf.j2" dest=/root/.my.cnf owner=root mode=600
+
+- name: ensure anonymous users are not in the database
+  mysql_user: name='' host={{ item }} state=absent
+  with_items:
+    - "{{ ansible_hostname }}"
+    - 127.0.0.1
+    - ::1
+    - localhost
+
+- name: create icinga databases
+  action: mysql_db name=icinga state=present
+  register: icinga_db
+
+- name: create icinga_web database
+  action: mysql_db name=icinga_web state=present
+  register: icinga_web_db
+
+- name: import icinga database
+  action: mysql_db name=icinga state=import target=/usr/share/doc/icinga-idoutils-libdbi-mysql-{{ icinga_version }}/db/mysql/mysql.sql
+  when: icinga_db|changed
+
+- name: import icinga_web database
+  action: mysql_db name=icinga_web state=import target=/usr/share/doc/icinga-web-{{ icinga_version }}/schema/mysql.sql
+  when: icinga_web_db|changed
+
+- name: create icinga user
+  action: mysql_user name={{ mysql_icinga_user }} password={{ mysql_icinga_pwd }} priv=icinga.*:SELECT,INSERT,UPDATE,DELETE,DROP,'CREATE VIEW',INDEX,EXECUTE state=present
+
+- name: create icinga_web user
+  action: mysql_user name={{ mysql_icinga_web_user }} password={{ mysql_icinga_web_pwd }} priv=icinga_web.*:SELECT,INSERT,UPDATE,DELETE,CREATE,DROP,ALTER,INDEX state=present
+
+- name: copy template ido2db.cfg
+  action: template src=ido2db.cfg.j2 dest=/etc/icinga/ido2db.cfg mode=0660
+  notify:
+  - restart ido2db
+  - restart icinga
+
+- name: copy template icinga.cfg
+  action: template src=icinga.cfg.j2 dest=/etc/icinga/icinga.cfg mode=0644
+  notify: 
+  - restart icinga
+
+- name: copy databases.xml to icinga-web
+  action: template src=databases.xml.j2 dest=/etc/icinga-web/conf.d/databases.xml mode=0644
+  notify:
+   - clean cache
+
+- name: remove standard files of Icinga
+  action: file state=absent path=/etc/icinga/objects/{{item}}
+  with_items:
+  - contacts.cfg
+  - commands.cfg
+  - localhost.cfg
+  - notifications.cfg
+  - printer.cfg
+  - switch.cfg
+  - templates.cfg
+  - windows.cfg
+  - timeperiods.cfg
+  - ido2db_check_proc.cfg
+
+- name: start HTTP server
+  action: service name=httpd state=started enabled=yes
+  register: http_service
+
+- name: start ido2db
+  action: service name=ido2db state=started enabled=yes
+  register: ido2db_service
+
+- name: start icinga
+  action: service name=icinga state=started enabled=yes
+  register: icinga_service

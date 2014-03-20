@@ -1,0 +1,10 @@
+---
+- name: check_mk inventory
+  action: shell cmk -I {{ansible_hostname}}
+  delegate_to: "{{hostvars[item]['ansible_eth1']['ipv4']['address']}}"
+  with_items: groups.icinga
+
+- name: check_mk generate
+  action: shell cmk -O
+  delegate_to: "{{hostvars[item]['ansible_eth1']['ipv4']['address']}}"
+  with_items: groups.icinga
